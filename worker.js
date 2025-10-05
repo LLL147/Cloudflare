@@ -5,6 +5,9 @@
 // 3. 改进代理逻辑，确保路径正确传递
 
 // 用户配置区域开始 =================================
+
+const HF_TOKEN = typeof HF_TOKEN !== 'undefined' ? HF_TOKEN : '你的默认Token';
+
 const ALLOWED_HOSTS = [
   'quay.io',
   'gcr.io',
