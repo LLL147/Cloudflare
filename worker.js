@@ -1,12 +1,8 @@
-// 更新日期: 2025-08-25
-// 更新内容: 
-// 1. 修复 Hugging Face 路径处理问题
-// 2. 修复 Docker 镜像搜索结果显示问题
-// 3. 改进代理逻辑，确保路径正确传递
-
 // 用户配置区域开始 =================================
-
-const HF_TOKEN = typeof HF_TOKEN !== 'undefined' ? HF_TOKEN : '你的默认Token';
+const SECURITY_CONFIG = {
+  enableWhitelist: false,      // 是否启用白名单检查
+  enablePathRestriction: false // 是否启用路径限制
+};
 
 const ALLOWED_HOSTS = [
   'quay.io',
@@ -26,12 +22,7 @@ const ALLOWED_HOSTS = [
 ];
 
 const RESTRICT_PATHS = false;
-
-const ALLOWED_PATHS = [
-  'library',
-  'user-id-1',
-  'user-id-2',
-];
+const ALLOWED_PATHS = ['library', 'user-id-1', 'user-id-2'];
 
 // HF_TOKEN: Hugging Face 访问令牌，用于避免 IP 限速
 const HF_TOKEN = '';
@@ -133,7 +124,7 @@ async function handleDockerSearch(request) {
   const searchParams = url.searchParams;
   const query = searchParams.get('q');
   const page = searchParams.get('page') || '1';
-  const perPage = searchParams.get('per_page') || '25';
+  const perPage = searchParams.get('per_page') || '10'; // 每页显示10个结果
 
   if (!query) {
     return new Response(JSON.stringify({ error: '搜索参数 q 不能为空' }), {
@@ -154,14 +145,14 @@ async function handleDockerSearch(request) {
 }
 
 /**
- * 获取模拟搜索数据 - 修复结果显示问题
+ * 获取模拟搜索数据 - 修复分页和结果显示问题
  */
 function getMockSearchResults(query, page, perPage) {
   const pageNum = parseInt(page);
   const perPageNum = parseInt(perPage);
   
   // 扩展模拟数据，提供更多结果
-  const mockImages = [
+  const allMockImages = [
     {
       name: 'nginx',
       namespace: 'library',
@@ -317,14 +308,53 @@ function getMockSearchResults(query, page, perPage) {
       repository_type: 'image',
       last_updated: '2024-01-04T08:30:00Z',
       pull_command: 'jenkins'
+    },
+    {
+      name: 'tomcat',
+      namespace: 'library',
+      full_name: 'tomcat',
+      description: 'Apache Tomcat is an open source implementation of Java Servlet.',
+      pull_count: 400000000,
+      star_count: 3200,
+      official: true,
+      automated: false,
+      repository_type: 'image',
+      last_updated: '2024-01-03T14:20:00Z',
+      pull_command: 'tomcat'
+    },
+    {
+      name: 'wordpress',
+      namespace: 'library',
+      full_name: 'wordpress',
+      description: 'The WordPress blogging system and content management system.',
+      pull_count: 350000000,
+      star_count: 3000,
+      official: true,
+      automated: false,
+      repository_type: 'image',
+      last_updated: '2024-01-02T11:15:00Z',
+      pull_command: 'wordpress'
+    },
+    {
+      name: 'mariadb',
+      namespace: 'library',
+      full_name: 'mariadb',
+      description: 'MariaDB is a community-developed fork of MySQL.',
+      pull_count: 300000000,
+      star_count: 2800,
+      official: true,
+      automated: false,
+      repository_type: 'image',
+      last_updated: '2024-01-01T09:45:00Z',
+      pull_command: 'mariadb'
     }
   ];
 
-  // 根据查询过滤结果
-  const filteredResults = mockImages.filter(image => 
+  // 根据查询过滤结果 - 如果搜索词为空，返回所有结果
+  const filteredResults = query ? allMockImages.filter(image => 
     image.name.toLowerCase().includes(query.toLowerCase()) ||
     image.description.toLowerCase().includes(query.toLowerCase())
-  );
+  ) : allMockImages;
 
   // 分页逻辑
   const startIndex = (pageNum - 1) * perPageNum;
@@ -332,10 +362,11 @@ function getMockSearchResults(query, page, perPage) {
   const paginatedResults = filteredResults.slice(startIndex, endIndex);
 
   return {
-    query: query,
+    query: query || '',
     page: pageNum,
     per_page: perPageNum,
     total: filteredResults.length,
+    total_pages: Math.ceil(filteredResults.length / perPageNum),
     results: paginatedResults
   };
 }
@@ -965,18 +996,32 @@ const HOMEPAGE_HTML = `
         </div>
       \`).join('');
 
+      // 分页显示逻辑
       if (data.total > data.per_page) {
-        const totalPages = Math.ceil(data.total / data.per_page);
+        const totalPages = data.total_pages || Math.ceil(data.total / data.per_page);
         let paginationHTML = '';
         
+        // 首页按钮
+        if (currentPage > 1) {
+          paginationHTML += \`<button onclick="searchDockerImages(1)" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500">首页</button>\`;
+        }
+        
+        // 上一页按钮
         if (currentPage > 1) {
           paginationHTML += \`<button onclick="searchDockerImages(\${currentPage - 1})" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500">上一页</button>\`;
         }
         
+        // 页码信息
         paginationHTML += \`<span class="px-3 py-1">第 \${currentPage} 页 / 共 \${totalPages} 页</span>\`;
         
+        // 下一页按钮
         if (currentPage < totalPages) {
           paginationHTML += \`<button onclick="searchDockerImages(\${currentPage + 1})" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500">下一页</button>\`;
+        }
+        
+        // 末页按钮
+        if (currentPage < totalPages) {
+          paginationHTML += \`<button onclick="searchDockerImages(\${totalPages})" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500">末页</button>\`;
         }
         
         pagination.innerHTML = paginationHTML;
@@ -1088,9 +1133,17 @@ async function handleRequest(request) {
     targetPath = pathParts.slice(1).join('/') + url.search;
   }
 
-  // 白名单检查
-  if (!ALLOWED_HOSTS.includes(targetDomain)) {
-    return new Response(`Error: Invalid target domain.\n`, { status: 400 });
+  // 白名单检查 - 根据配置决定是否启用
+  if (SECURITY_CONFIG.enableWhitelist) {
+    const isAllowedHost = ALLOWED_HOSTS.includes(targetDomain) || 
+                         ALLOWED_HOSTS.some(host => targetDomain.endsWith('.' + host));
+    
+    if (!isAllowedHost) {
+      return new Response(`Error: Domain ${targetDomain} is not allowed.\n请检查域名或联系管理员。\n`, { 
+        status: 400,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      });
+    }
   }
 
   // =======================================
