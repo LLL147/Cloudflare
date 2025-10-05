@@ -133,26 +133,16 @@ async function handleDockerSearch(request) {
     });
   }
 
-  // 使用模拟数据
-  const mockResults = getMockSearchResults(query, page, perPage);
-  
-  return new Response(JSON.stringify(mockResults, null, 2), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
-  });
-}
-
 /**
- * 获取模拟搜索数据 - 修复分页和结果显示问题
+ * 获取模拟搜索数据 - 全站无限制搜索版本
  */
 function getMockSearchResults(query, page, perPage) {
   const pageNum = parseInt(page);
   const perPageNum = parseInt(perPage);
   
-  // 扩展模拟数据，提供更多结果
+  // 扩展模拟数据：包含官方镜像和非官方（用户）镜像
   const allMockImages = [
+    // 官方镜像 (library/ 命名空间)
     {
       name: 'nginx',
       namespace: 'library',
@@ -192,169 +182,111 @@ function getMockSearchResults(query, page, perPage) {
       last_updated: '2024-01-13T14:20:00Z',
       pull_command: 'mysql'
     },
+    
+    // 非官方镜像 (其他用户/组织)
     {
-      name: 'node',
-      namespace: 'library',
-      full_name: 'node',
-      description: 'Node.js JavaScript runtime.',
-      pull_count: 1200000000,
-      star_count: 8500,
-      official: true,
-      automated: false,
+      name: 'web-app',
+      namespace: 'johnsmith',
+      full_name: 'johnsmith/web-app',
+      description: 'A web application built with Node.js',
+      pull_count: 50000,
+      star_count: 120,
+      official: false,
+      automated: true,
       repository_type: 'image',
-      last_updated: '2024-01-12T16:10:00Z',
-      pull_command: 'node'
+      last_updated: '2024-01-10T12:00:00Z',
+      pull_command: 'johnsmith/web-app'
     },
     {
-      name: 'postgres',
-      namespace: 'library',
-      full_name: 'postgres',
-      description: 'The PostgreSQL object-relational database system.',
-      pull_count: 900000000,
-      star_count: 7200,
-      official: true,
-      automated: false,
+      name: 'data-processor',
+      namespace: 'datascience',
+      full_name: 'datascience/data-processor',
+      description: 'Data processing tools for machine learning',
+      pull_count: 32000,
+      star_count: 85,
+      official: false,
+      automated: true,
       repository_type: 'image',
-      last_updated: '2024-01-11T11:25:00Z',
-      pull_command: 'postgres'
+      last_updated: '2024-01-09T15:30:00Z',
+      pull_command: 'datascience/data-processor'
     },
     {
-      name: 'python',
-      namespace: 'library',
-      full_name: 'python',
-      description: 'Python is a programming language.',
-      pull_count: 800000000,
-      star_count: 6500,
-      official: true,
+      name: 'monitoring',
+      namespace: 'devops-team',
+      full_name: 'devops-team/monitoring',
+      description: 'Monitoring stack with Prometheus and Grafana',
+      pull_count: 78000,
+      star_count: 210,
+      official: false,
       automated: false,
       repository_type: 'image',
-      last_updated: '2024-01-10T09:15:00Z',
-      pull_command: 'python'
+      last_updated: '2024-01-08T09:15:00Z',
+      pull_command: 'devops-team/monitoring'
     },
     {
-      name: 'alpine',
-      namespace: 'library',
-      full_name: 'alpine',
-      description: 'A minimal Docker image based on Alpine Linux.',
-      pull_count: 1100000000,
-      star_count: 5800,
-      official: true,
-      automated: false,
+      name: 'ai-model',
+      namespace: 'ml-research',
+      full_name: 'ml-research/ai-model',
+      description: 'Pre-trained AI model for image recognition',
+      pull_count: 12000,
+      star_count: 45,
+      official: false,
+      automated: true,
       repository_type: 'image',
-      last_updated: '2024-01-09T07:20:00Z',
-      pull_command: 'alpine'
+      last_updated: '2024-01-07T14:20:00Z',
+      pull_command: 'ml-research/ai-model'
     },
     {
-      name: 'ubuntu',
-      namespace: 'library',
-      full_name: 'ubuntu',
-      description: 'Ubuntu is a Debian-based Linux operating system.',
-      pull_count: 950000000,
-      star_count: 5200,
-      official: true,
-      automated: false,
+      name: 'api-gateway',
+      namespace: 'microservices',
+      full_name: 'microservices/api-gateway',
+      description: 'API gateway for microservices architecture',
+      pull_count: 45000,
+      star_count: 98,
+      official: false,
+      automated: true,
       repository_type: 'image',
-      last_updated: '2024-01-08T15:40:00Z',
-      pull_command: 'ubuntu'
+      last_updated: '2024-01-06T11:45:00Z',
+      pull_command: 'microservices/api-gateway'
     },
     {
-      name: 'centos',
-      namespace: 'library',
-      full_name: 'centos',
-      description: 'The official build of CentOS.',
-      pull_count: 700000000,
-      star_count: 4800,
-      official: true,
-      automated: false,
+      name: 'frontend',
+      namespace: 'webdev',
+      full_name: 'webdev/frontend',
+      description: 'React frontend application with TypeScript',
+      pull_count: 28000,
+      star_count: 76,
+      official: false,
+      automated: true,
       repository_type: 'image',
-      last_updated: '2024-01-07T12:30:00Z',
-      pull_command: 'centos'
+      last_updated: '2024-01-05T16:30:00Z',
+      pull_command: 'webdev/frontend'
     },
     {
-      name: 'mongo',
-      namespace: 'library',
-      full_name: 'mongo',
-      description: 'MongoDB document databases.',
-      pull_count: 600000000,
-      star_count: 4200,
-      official: true,
+      name: 'database-backup',
+      namespace: 'admin-tools',
+      full_name: 'admin-tools/database-backup',
+      description: 'Automated database backup and restore utilities',
+      pull_count: 15000,
+      star_count: 32,
+      official: false,
       automated: false,
       repository_type: 'image',
-      last_updated: '2024-01-06T11:25:00Z',
-      pull_command: 'mongo'
-    },
-    {
-      name: 'elasticsearch',
-      namespace: 'library',
-      full_name: 'elasticsearch',
-      description: 'Open Source, Distributed, RESTful Search Engine.',
-      pull_count: 500000000,
-      star_count: 3800,
-      official: true,
-      automated: false,
-      repository_type: 'image',
-      last_updated: '2024-01-05T10:15:00Z',
-      pull_command: 'elasticsearch'
-    },
-    {
-      name: 'jenkins',
-      namespace: 'library',
-      full_name: 'jenkins',
-      description: 'Jenkins Automation Server.',
-      pull_count: 450000000,
-      star_count: 3500,
-      official: true,
-      automated: false,
-      repository_type: 'image',
-      last_updated: '2024-01-04T08:30:00Z',
-      pull_command: 'jenkins'
-    },
-    {
-      name: 'tomcat',
-      namespace: 'library',
-      full_name: 'tomcat',
-      description: 'Apache Tomcat is an open source implementation of Java Servlet.',
-      pull_count: 400000000,
-      star_count: 3200,
-      official: true,
-      automated: false,
-      repository_type: 'image',
-      last_updated: '2024-01-03T14:20:00Z',
-      pull_command: 'tomcat'
-    },
-    {
-      name: 'wordpress',
-      namespace: 'library',
-      full_name: 'wordpress',
-      description: 'The WordPress blogging system and content management system.',
-      pull_count: 350000000,
-      star_count: 3000,
-      official: true,
-      automated: false,
-      repository_type: 'image',
-      last_updated: '2024-01-02T11:15:00Z',
-      pull_command: 'wordpress'
-    },
-    {
-      name: 'mariadb',
-      namespace: 'library',
-      full_name: 'mariadb',
-      description: 'MariaDB is a community-developed fork of MySQL.',
-      pull_count: 300000000,
-      star_count: 2800,
-      official: true,
-      automated: false,
-      repository_type: 'image',
-      last_updated: '2024-01-01T09:45:00Z',
-      pull_command: 'mariadb'
+      last_updated: '2024-01-04T08:20:00Z',
+      pull_command: 'admin-tools/database-backup'
     }
   ];
 
-  // 根据查询过滤结果 - 如果搜索词为空，返回所有结果
-  const filteredResults = query ? allMockImages.filter(image => 
-    image.name.toLowerCase().includes(query.toLowerCase()) ||
-    image.description.toLowerCase().includes(query.toLowerCase())
-  ) : allMockImages;
+  // 无限制搜索逻辑：搜索名称、完整名称、描述、命名空间
+  const filteredResults = query ? allMockImages.filter(image => {
+    const searchTerm = query.toLowerCase();
+    return (
+      image.name.toLowerCase().includes(searchTerm) ||
+      image.full_name.toLowerCase().includes(searchTerm) ||
+      image.description.toLowerCase().includes(searchTerm) ||
+      (image.namespace && image.namespace.toLowerCase().includes(searchTerm))
+    );
+  }) : allMockImages;
 
   // 分页逻辑
   const startIndex = (pageNum - 1) * perPageNum;
@@ -370,7 +302,6 @@ function getMockSearchResults(query, page, perPage) {
     results: paginatedResults
   };
 }
-
 // =======================================
 // 首页 HTML
 // =======================================
